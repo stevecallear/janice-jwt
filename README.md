@@ -3,7 +3,7 @@
 [![codecov](https://codecov.io/gh/stevecallear/janice-jwt/branch/master/graph/badge.svg)](https://codecov.io/gh/stevecallear/janice-jwt)
 [![Go Report Card](https://goreportcard.com/badge/github.com/stevecallear/janice-jwt)](https://goreportcard.com/report/github.com/stevecallear/janice-jwt)
 
-janice-jwt provides JWT token middleware for use with [janice](https://github.com/dgrijalva/jwt-go). It uses [jwt-go](https://github.com/dgrijalva/jwt-go) for token parsing and is similar in approach to [go-jwt-middleware](https://github.com/auth0/go-jwt-middleware) but as a `janice.MiddlewareFunc` implementation.
+janice-jwt provides JWT token middleware for use with [Janice](https://github.com/stevecallear/janice). It uses [jwt-go](https://github.com/dgrijalva/jwt-go) for token parsing and is similar in approach to [go-jwt-middleware](https://github.com/auth0/go-jwt-middleware) but as a `janice.MiddlewareFunc` implementation.
 
 
 ## Getting started
