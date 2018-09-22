@@ -45,8 +45,8 @@ auth := jwt.New(jwt.HMAC(key), func(opt *jwt.Options) {
 })
 ```
 
-## Token signing methods
-The module supports HMAC and RSA keys using `jwt.HMAC` and `jwt.RSA` respectively. Other signing methods are supported by replacing the options `KeyFn`. For example, the following returns an ECDSA key:
+## Signing methods
+The module supports HMAC and RSA signing keys using `jwt.HMAC` and `jwt.RSA` respectively. Other signing methods are supported by replacing the options `KeyFn`. For example, the following returns an ECDSA signing key:
 ```
 // import jwtgo "github.com/dgrijalva/jwt-go"
 

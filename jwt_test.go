@@ -31,12 +31,10 @@ func ExampleNew() {
 		panic(err)
 	}
 
-	mw := janice.New(jwt.New(jwt.HMAC(key)))
-	handler := mw.Then(func(w http.ResponseWriter, r *http.Request) error {
-		var err error
-		if c, ok := jwt.GetClaims(r); ok {
-			_, err = w.Write([]byte(c["sub"].(string)))
-		}
+	auth := jwt.New(jwt.HMAC(key))
+	handler := auth.Then(func(w http.ResponseWriter, r *http.Request) error {
+		c, _ := jwt.GetClaims(r)
+		_, err := fmt.Fprint(w, c["sub"].(string))
 		return err
 	})
 
