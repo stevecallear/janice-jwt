@@ -287,7 +287,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestNew_DefaultOptions(t *testing.T) {
+func TestNewWithDefaultOptions(t *testing.T) {
 	tests := []struct {
 		name string
 		auth *string
