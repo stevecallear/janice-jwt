@@ -26,8 +26,7 @@ type (
 )
 
 var (
-	// DefaultOptions defines a set of default middleware options
-	DefaultOptions = Options{
+	defaultOptions = Options{
 		TokenFn: func(r *http.Request) (string, bool) {
 			h := r.Header.Get("Authorization")
 			if len(h) < 7 || !strings.EqualFold(h[:7], "bearer ") {
@@ -44,13 +43,12 @@ var (
 			return nil
 		},
 	}
-
 	claimsKey = contextKey("claims")
 )
 
 // New returns new JWT middleware for the specified option funcs
 func New(fns ...func(*Options)) janice.MiddlewareFunc {
-	o := DefaultOptions
+	o := defaultOptions
 	for _, fn := range fns {
 		fn(&o)
 	}

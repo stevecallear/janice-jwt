@@ -47,74 +47,6 @@ func ExampleNew() {
 	// Output: 200 test@email.com
 }
 
-func TestDefaultOptions_TokenFn(t *testing.T) {
-	tests := []struct {
-		name   string
-		header *string
-		exp    string
-		ok     bool
-	}{
-		{
-			name:   "should return false if the authorization header is not set",
-			header: nil,
-		},
-		{
-			name:   "should return false if the authorization header is empty",
-			header: strPtr(""),
-		},
-		{
-			name:   "should return false if the authorization header is not bearer",
-			header: strPtr("invalid token"),
-		},
-		{
-			name:   "should return true if the authorization header is valid",
-			header: strPtr("Bearer token"),
-			exp:    "token",
-			ok:     true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := httptest.NewRequest("GET", "/", nil)
-			if tt.header != nil {
-				r.Header.Set("authorization", *tt.header)
-			}
-			act, ok := jwt.DefaultOptions.TokenFn(r)
-			if act != tt.exp {
-				t.Errorf("got %s, expected %s", act, tt.exp)
-			}
-			if ok != tt.ok {
-				t.Errorf("got %v, expected %v", ok, tt.ok)
-			}
-		})
-	}
-}
-
-func TestDefaultOptions_KeyFn(t *testing.T) {
-	t.Run("should return an error", func(t *testing.T) {
-		k, err := jwt.DefaultOptions.KeyFn(nil, nil)
-		if err == nil {
-			t.Error("got nil, expected an error")
-		}
-		if k != nil {
-			t.Errorf("got %s, expected nil", k)
-		}
-	})
-}
-
-func TestDefaultOptions_ErrorFn(t *testing.T) {
-	t.Run("should set the status to unauthorized", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		err := jwt.DefaultOptions.ErrorFn(w, errors.New("error"))
-		if err != nil {
-			t.Errorf("got %v, expected nil", err)
-		}
-		if w.Code != http.StatusUnauthorized {
-			t.Errorf("got %d, expected %d", w.Code, http.StatusUnauthorized)
-		}
-	})
-}
-
 func TestNew(t *testing.T) {
 	now := time.Now().UTC()
 	err := errors.New("expected")
@@ -335,22 +267,68 @@ func TestNew(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			withTime(now, func() {
-				w, r := httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil)
-				var c map[string]interface{}
+				rec := httptest.NewRecorder()
+				req := httptest.NewRequest("GET", "/", nil)
 				err := jwt.New(tt.optionsFn)(func(w http.ResponseWriter, r *http.Request) error {
-					c, _ = jwt.GetClaims(r)
+					c, _ := jwt.GetClaims(r)
+					if !reflect.DeepEqual(c, tt.claims) {
+						t.Errorf("got %v, expected %v", c, tt.claims)
+					}
 					return tt.handlerFn(w, r)
-				})(w, r)
+				})(rec, req)
 				if err != tt.err {
 					t.Errorf("got %v, expected %v", err, tt.err)
 				}
-				if w.Code != tt.code {
-					t.Errorf("got %d, expected %d", w.Code, tt.code)
-				}
-				if !reflect.DeepEqual(c, tt.claims) {
-					t.Errorf("got %v, expected %v", c, tt.claims)
+				if rec.Code != tt.code {
+					t.Errorf("got %d, expected %d", rec.Code, tt.code)
 				}
 			})
+		})
+	}
+}
+
+func TestNew_DefaultOptions(t *testing.T) {
+	tests := []struct {
+		name string
+		auth *string
+		code int
+	}{
+		{
+			name: "should return unauthorized if the authorization header is not set",
+			code: http.StatusUnauthorized,
+		},
+		{
+			name: "should return unauthorized if the authorization header is empty",
+			auth: strPtr(""),
+			code: http.StatusUnauthorized,
+		},
+		{
+			name: "should return unauthorized if the authorization header is invalid",
+			auth: strPtr("basic credentials"),
+			code: http.StatusUnauthorized,
+		},
+		{
+			name: "should return unauthorized if the key fn is not set",
+			auth: strPtr("Bearer " + newNone(map[string]interface{}{})),
+			code: http.StatusUnauthorized,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/", nil)
+			if tt.auth != nil {
+				req.Header.Set("Authorization", *tt.auth)
+			}
+			err := jwt.New()(func(w http.ResponseWriter, r *http.Request) error {
+				return nil
+			})(rec, req)
+			if err != nil {
+				t.Errorf("got %v, expected nil", err)
+			}
+			if rec.Code != tt.code {
+				t.Errorf("got %d, expected %d", rec.Code, tt.code)
+			}
 		})
 	}
 }
