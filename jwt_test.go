@@ -271,26 +271,27 @@ func TestNew(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			withTime(now, func() {
-				rec := httptest.NewRecorder()
-				req := httptest.NewRequest("GET", "/", nil)
+			restore := setTime(now)
+			defer restore()
 
-				err := jwt.New(tt.optionsFn)(func(w http.ResponseWriter, r *http.Request) error {
-					c, _ := jwt.GetClaims(r)
-					if !reflect.DeepEqual(c, tt.claims) {
-						t.Errorf("got %v, expected %v", c, tt.claims)
-					}
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/", nil)
 
-					return tt.handlerFn(w, r)
-				})(rec, req)
-				if err != tt.err {
-					t.Errorf("got %v, expected %v", err, tt.err)
+			err := jwt.New(tt.optionsFn)(func(w http.ResponseWriter, r *http.Request) error {
+				c, _ := jwt.GetClaims(r)
+				if !reflect.DeepEqual(c, tt.claims) {
+					t.Errorf("got %v, expected %v", c, tt.claims)
 				}
 
-				if rec.Code != tt.code {
-					t.Errorf("got %d, expected %d", rec.Code, tt.code)
-				}
-			})
+				return tt.handlerFn(w, r)
+			})(rec, req)
+			if err != tt.err {
+				t.Errorf("got %v, expected %v", err, tt.err)
+			}
+
+			if rec.Code != tt.code {
+				t.Errorf("got %d, expected %d", rec.Code, tt.code)
+			}
 		})
 	}
 }
@@ -478,18 +479,16 @@ func newNone(c map[string]interface{}) string {
 	return t
 }
 
-func withTime(t time.Time, fn func()) {
+func setTime(t time.Time) func() {
 	tfn := jwtgo.TimeFunc
-
-	defer func() {
-		jwtgo.TimeFunc = tfn
-	}()
 
 	jwtgo.TimeFunc = func() time.Time {
 		return t
 	}
 
-	fn()
+	return func() {
+		jwtgo.TimeFunc = tfn
+	}
 }
 
 func strPtr(s string) *string {
