@@ -56,6 +56,7 @@ auth := jwt.New(func(o *jwt.Options) {
         if _, ok := t.Method.(*jwtgo.SigningMethodECDSA); !ok {
             return nil, fmt.Errorf("invalid signing method: %s", t.Header["alg"])
         }
+
         return key, nil
     }
 })
@@ -74,6 +75,7 @@ auth := jwt.New(jwt.HMAC(key), func(opt *jwt.Options) {
 })
 
 chain := janice.New(strudel.ErrorHandling, auth)
+
 handler := chain.Then(func(w http.ResponseWriter, r *http.Request) error {
     return nil
 })
@@ -86,11 +88,13 @@ auth := jwt.New(jwt.RSA(key), jwt.Optional)
 
 handler := auth.Then(func(w http.ResponseWriter, r *http.Request) error {
     var err error
+
     if c, ok := jwt.GetClaims(r); ok {
         _, err = fmt.Fprint(w, c["sub"].(string))
     } else {
         _, err = fmt.Fprint(w, "anonymous")
     }
+
     return err
 })
 ```

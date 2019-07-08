@@ -22,16 +22,19 @@ func init() {
 
 func ExampleNew() {
 	key := []byte("secretkey")
+
 	claims := map[string]interface{}{
 		"sub": "test@email.com",
 		"exp": time.Now().UTC().Add(1 * time.Hour),
 	}
+
 	token, err := jwtgo.NewWithClaims(jwtgo.SigningMethodHS512, jwtgo.MapClaims(claims)).SignedString(key)
 	if err != nil {
 		panic(err)
 	}
 
 	auth := jwt.New(jwt.HMAC(key))
+
 	handler := auth.Then(func(w http.ResponseWriter, r *http.Request) error {
 		c, _ := jwt.GetClaims(r)
 		_, err := fmt.Fprint(w, c["sub"].(string))
@@ -41,6 +44,7 @@ func ExampleNew() {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Add("Authorization", "Bearer "+token)
+
 	handler.ServeHTTP(rec, req)
 
 	fmt.Printf("%d %s", rec.Code, rec.Body)
@@ -50,6 +54,7 @@ func ExampleNew() {
 func TestNew(t *testing.T) {
 	now := time.Now().UTC()
 	err := errors.New("expected")
+
 	tests := []struct {
 		name      string
 		optionsFn func(*jwt.Options)
@@ -269,16 +274,19 @@ func TestNew(t *testing.T) {
 			withTime(now, func() {
 				rec := httptest.NewRecorder()
 				req := httptest.NewRequest("GET", "/", nil)
+
 				err := jwt.New(tt.optionsFn)(func(w http.ResponseWriter, r *http.Request) error {
 					c, _ := jwt.GetClaims(r)
 					if !reflect.DeepEqual(c, tt.claims) {
 						t.Errorf("got %v, expected %v", c, tt.claims)
 					}
+
 					return tt.handlerFn(w, r)
 				})(rec, req)
 				if err != tt.err {
 					t.Errorf("got %v, expected %v", err, tt.err)
 				}
+
 				if rec.Code != tt.code {
 					t.Errorf("got %d, expected %d", rec.Code, tt.code)
 				}
@@ -317,15 +325,18 @@ func TestNewWithDefaultOptions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
 			req := httptest.NewRequest("GET", "/", nil)
+
 			if tt.auth != nil {
 				req.Header.Set("Authorization", *tt.auth)
 			}
+
 			err := jwt.New()(func(w http.ResponseWriter, r *http.Request) error {
 				return nil
 			})(rec, req)
 			if err != nil {
 				t.Errorf("got %v, expected nil", err)
 			}
+
 			if rec.Code != tt.code {
 				t.Errorf("got %d, expected %d", rec.Code, tt.code)
 			}
@@ -337,6 +348,7 @@ func TestOptional(t *testing.T) {
 	t.Run("should set optional to true", func(t *testing.T) {
 		o := jwt.Options{}
 		jwt.Optional(&o)
+
 		if !o.Optional {
 			t.Error("got false, expected true")
 		}
@@ -369,13 +381,17 @@ func TestHMAC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			o := jwt.Options{}
 			jwt.HMAC(tt.key)(&o)
+
 			act, err := o.KeyFn(nil, jwtgo.New(tt.method))
+
 			if err != nil && !tt.err {
 				t.Errorf("got %v, expected nil", err)
 			}
+
 			if err == nil && tt.err {
 				t.Error("got nil, expected an error")
 			}
+
 			if !reflect.DeepEqual(act, tt.exp) {
 				t.Errorf("got %v, expected %v", act, tt.exp)
 			}
@@ -412,13 +428,17 @@ func TestRSA(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			o := jwt.Options{}
 			jwt.RSA(tt.key)(&o)
+
 			act, err := o.KeyFn(nil, jwtgo.New(tt.method))
+
 			if err != nil && !tt.err {
 				t.Errorf("got %v, expected nil", err)
 			}
+
 			if err == nil && tt.err {
 				t.Error("got nil, expected an error")
 			}
+
 			if !reflect.DeepEqual(act, tt.exp) {
 				t.Errorf("got %v, expected %v", act, tt.exp)
 			}
@@ -431,6 +451,7 @@ func newHMAC(k []byte, c map[string]interface{}) string {
 	if err != nil {
 		panic(err)
 	}
+
 	return t
 }
 
@@ -439,10 +460,12 @@ func newRSA(k []byte, c map[string]interface{}) string {
 	if err != nil {
 		panic(err)
 	}
+
 	t, err := jwtgo.NewWithClaims(jwtgo.SigningMethodRS256, jwtgo.MapClaims(c)).SignedString(pk)
 	if err != nil {
 		panic(err)
 	}
+
 	return t
 }
 
@@ -451,17 +474,21 @@ func newNone(c map[string]interface{}) string {
 	if err != nil {
 		panic(err)
 	}
+
 	return t
 }
 
 func withTime(t time.Time, fn func()) {
 	tfn := jwtgo.TimeFunc
+
 	defer func() {
 		jwtgo.TimeFunc = tfn
 	}()
+
 	jwtgo.TimeFunc = func() time.Time {
 		return t
 	}
+
 	fn()
 }
 
