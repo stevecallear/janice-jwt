@@ -12,7 +12,7 @@ import (
 
 	"github.com/stevecallear/janice"
 
-	jwtgo "github.com/dgrijalva/jwt-go"
+	jwtgo "github.com/golang-jwt/jwt"
 	jwt "github.com/stevecallear/janice-jwt"
 )
 
